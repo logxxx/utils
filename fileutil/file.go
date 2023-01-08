@@ -18,9 +18,10 @@ func IsExists(path string) bool {
 	return true
 }
 
-func WriteToFileWithRename(data []byte, dir, fileName string) error {
+func WriteToFileWithRename(data []byte, dir, fileName string) (string, error) {
 	dir, fileName = getValidPath(dir, fileName)
-	return WriteToFile(data, filepath.Join(dir, fileName))
+	newPath := filepath.Join(dir, fileName)
+	return newPath, WriteToFile(data, newPath)
 }
 
 func getValidPath(dir, fileNameWithExt string) (string, string) {
