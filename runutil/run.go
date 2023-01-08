@@ -13,7 +13,7 @@ func GoRunSafe(fn func()) {
 	if fn == nil {
 		return
 	}
-	func() {
+	go func() {
 		defer func() {
 			if err := recover(); err != nil {
 				buf := make([]byte, 1024)
@@ -27,21 +27,19 @@ func GoRunSafe(fn func()) {
 }
 
 // 安全地执行goroutine。包装了recover()捕获异常
-func RunSafe(fn func()) {
+func RunSafe(fn func() error) error {
 	if fn == nil {
-		return
+		return nil
 	}
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				buf := make([]byte, 1024)
-				_ = runtime.Stack(buf, false)
-				log.Errorf("RunSafe panic:%v stack:%s", err, buf)
-			}
-		}()
-
-		fn()
+	defer func() {
+		if err := recover(); err != nil {
+			buf := make([]byte, 1024)
+			_ = runtime.Stack(buf, false)
+			log.Errorf("RunSafe panic:%v stack:%s", err, buf)
+		}
 	}()
+
+	return fn()
 }
 
 func WaitForExit(closeFunc func()) {
