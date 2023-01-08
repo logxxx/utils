@@ -12,6 +12,20 @@ import (
 	"time"
 )
 
+func GetShowSize(input int64) string {
+	size := float64(input)
+	units := []string{"b", "kb", "MB", "GB", "TB"}
+	unitIdx := 0
+	for {
+		if size < 1024 || unitIdx >= len(units) {
+			break
+		}
+		size /= 1024
+		unitIdx++
+	}
+	return fmt.Sprintf("%.2f%v", size, units[unitIdx])
+}
+
 func StartCorn(fn func() error, d time.Duration) {
 
 	ticker := time.Tick(1 * time.Second)
@@ -87,12 +101,12 @@ func GetFileSize(path string) (showSize string) {
 	size := fInfo.Size()
 	format := "b"
 	if size < 1024 {
-		return fmt.Sprintf("%v%v", format)
+		return fmt.Sprintf("%v%v", size, format)
 	}
 	format = "kb"
 	size /= 1024
 	if size < 1024 {
-		return fmt.Sprintf("%v%v", format)
+		return fmt.Sprintf("%v%v", size, format)
 	}
 	format = "mb"
 	sizeFloat := float64(size) / 1024
