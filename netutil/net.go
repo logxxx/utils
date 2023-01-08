@@ -9,10 +9,26 @@ import (
 	"strconv"
 )
 
-func TryGetFileSize(url string) (fileSize int64) {
-	resp, err := http.Head(url)
+func TryGetFileSize(url string, setHeaderFuncs ...func(httpReq *http.Request)) (fileSize int64) {
+
+	httpReq, err := http.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return
+	}
+
+	if len(setHeaderFuncs) > 0 {
+		setHeaderFuncs[0](httpReq)
+	}
+
+	resp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
 		log.Errorf("TryGetFileSize err:%v", err)
+		return
+	}
+
+	log.Infof("TryGetFileSize resp.Code:%v", resp.StatusCode)
+
+	if resp.StatusCode != http.StatusOK {
 		return
 	}
 
