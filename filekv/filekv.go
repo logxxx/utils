@@ -8,7 +8,6 @@ import (
 	"github.com/logxxx/utils/log"
 	"io/ioutil"
 	"os"
-	"strings"
 	"sync"
 	"time"
 )
@@ -61,24 +60,6 @@ func (w *FileKV) MustGet(fileName, key string, value interface{}) error {
 	if err != nil {
 		log.Errorf("FileKV.MustGet Unmarshal err:%v rawValue:%v", err, string(rawValue))
 		return err
-	}
-
-	if strValuePtr, ok := value.(*string); ok {
-		strValue := *strValuePtr
-		log.Debugf("here MustGet Get RawString:%s key:%s", strValue, key)
-		if strings.HasPrefix(strValue, `"`) && strings.HasSuffix(strValue, `"`) {
-			log.Infof("here MustGet Get RawString has both PrefixAndSuffix:%v key:%v value:%s", strValue, key, value)
-			err = json.Unmarshal([]byte(strValue), value)
-			if err != nil {
-				log.Errorf("FileKV.MustGet Unmarshal TWICE err:%v rawValue:%v", err, strValue)
-				return err
-			}
-			//把正确的set回去
-			_ = w.set(fileName, key, value)
-			log.Infof("RawString fixTo: key:%v value:%v", key, value)
-		}
-	} else {
-		log.Debugf("here MustGet Get NotString:%v key:%v", value, key)
 	}
 
 	return nil
