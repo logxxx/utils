@@ -3,9 +3,26 @@ package netutil
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/logxxx/utils/log"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
+
+func TryGetFileSize(url string) (fileSize int64) {
+	resp, err := http.Head(url)
+	if err != nil {
+		log.Errorf("TryGetFileSize err:%v", err)
+		return
+	}
+
+	contentRangeStr := resp.Header.Get("Content-Length")
+
+	size, _ := strconv.ParseInt(contentRangeStr, 10, 64)
+
+	return size
+
+}
 
 func HttpDo(req *http.Request) (int, []byte, error) {
 	httpResp, err := http.DefaultClient.Do(req)
