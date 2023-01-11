@@ -2,11 +2,11 @@ package netutil
 
 import (
 	"errors"
-	"github.com/PuerkitoBio/goquery"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,7 +24,7 @@ func GetImage(url string) (respBytes []byte, err error) {
 
 	retryTimes := 0
 RETRY:
-	respBody, err := httpGet(url, true)
+	respBody, err := httpGet(nil, url)
 	if err != nil {
 		log.Printf("GetImage httpGet err:%v url:%v", err, url)
 		if err == Err404 || err == ErrTimeout || err == ErrNoHost {
@@ -51,36 +51,6 @@ RETRY:
 	return respBytes, nil
 }
 
-func DoFind(url string, findFunc func(doc *goquery.Document) error) (err error) {
-
-	respBody, err := httpGet(url, false)
-	if err != nil {
-		return err
-	}
-
-	defer respBody.Close()
-
-	//utf8Reader := transform.NewReader(respBody, simplifiedchinese.GBK.NewDecoder())
-
-	doc, err := goquery.NewDocumentFromReader(respBody)
-	if err != nil {
-		log.Printf("doFind NewDocumentFromReader err:%v", err)
-		if strings.Contains(err.Error(), "Timeout") {
-			err = ErrTimeout
-			return err
-		}
-		return err
-	}
-
-	err = findFunc(doc)
-	if err != nil {
-		log.Printf("doFind findFunc err:%v", err)
-		return err
-	}
-
-	return nil
-}
-
 func completePath(path string) string {
 	return joinPath("http://q.quantuwang1.com", path)
 }
@@ -96,46 +66,15 @@ func joinPath(elem ...string) string {
 	return strings.Join(elem, "")
 }
 
-func httpGet(url string, isImage bool) (io.ReadCloser, error) {
+func httpGet(client *http.Client, url string) (io.ReadCloser, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	client := http.Client{Timeout: 10 * time.Second}
-	if isImage {
-		req.Header.Set("Authority", "p.xgmn.vip")
-		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
-		req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9")
-		req.Header.Set("Cache-Control", "no-cache")
-		req.Header.Set("Cookie", "Hm_lvt_3e4b7c3cd2459ed4a577e4795c1973f9=1660411375,1660412551,1660416864,1660971543; Hm_lpvt_3e4b7c3cd2459ed4a577e4795c1973f9=1660972432")
-		req.Header.Set("Pragma", "no-cache")
-		req.Header.Set("Sec-Ch-Ua", "\"Chromium\";v=\"104\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"104\"")
-		req.Header.Set("Sec-Ch-Ua-Mobile", "?0")
-		req.Header.Set("Sec-Ch-Ua-Platform", "\"Windows\"")
-		req.Header.Set("Sec-Fetch-Dest", "document")
-		req.Header.Set("Sec-Fetch-Mode", "navigate")
-		req.Header.Set("Sec-Fetch-Site", "none")
-		req.Header.Set("Sec-Fetch-User", "?1")
-		req.Header.Set("Upgrade-Insecure-Requests", "1")
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36")
-	} else {
-		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
-		req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9")
-		req.Header.Set("Cache-Control", "no-cache")
-		req.Header.Set("Connection", "keep-alive")
-		req.Header.Set("Cookie", "Hm_lvt_3e4b7c3cd2459ed4a577e4795c1973f9=1660058145,1660379072,1660411375; Hm_lpvt_3e4b7c3cd2459ed4a577e4795c1973f9=1660411425")
-		req.Header.Set("Pragma", "no-cache")
-		req.Header.Set("Sec-Fetch-Dest", "document")
-		req.Header.Set("Sec-Fetch-Mode", "navigate")
-		req.Header.Set("Sec-Fetch-Site", "none")
-		req.Header.Set("Sec-Fetch-User", "?1")
-		req.Header.Set("Upgrade-Insecure-Requests", "1")
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36")
-		req.Header.Set("Sec-Ch-Ua", "\"Chromium\";v=\"104\", \" Not A;Brand\";v=\"99\", \"Google Chrome\";v=\"104\"")
-		req.Header.Set("Sec-Ch-Ua-Mobile", "?0")
-		req.Header.Set("Sec-Ch-Ua-Platform", "\"Windows\"")
+	if client == nil {
+		client = &http.Client{Timeout: 10 * time.Second}
 	}
 
 	httpResp, err := client.Do(req)
@@ -166,52 +105,14 @@ func httpGet(url string, isImage bool) (io.ReadCloser, error) {
 	return httpResp.Body, nil
 }
 
-type DocFinder struct {
-	cache map[string]*goquery.Document
-}
-
-func NewDocFinder() *DocFinder {
-	return &DocFinder{
-		cache: make(map[string]*goquery.Document),
+func SetHttpProxy(proxyURL string) (httpclient *http.Client) {
+	ProxyURL, _ := url.Parse(proxyURL)
+	httpclient = &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyURL(ProxyURL),
+		},
 	}
-}
-
-func (f *DocFinder) Find(url string, findFunc func(doc *goquery.Document) error) (err error) {
-
-	var document *goquery.Document
-
-	if value, ok := f.cache[url]; ok {
-		document = value
-	} else {
-		respBody, err := httpGet(url, false)
-		if err != nil {
-			return err
-		}
-
-		defer respBody.Close()
-
-		//utf8Reader := transform.NewReader(respBody, simplifiedchinese.GBK.NewDecoder())
-
-		doc, err := goquery.NewDocumentFromReader(respBody)
-		if err != nil {
-			log.Printf("doFind NewDocumentFromReader err:%v", err)
-			if strings.Contains(err.Error(), "Timeout") {
-				err = ErrTimeout
-				return err
-			}
-			return err
-		}
-		document = doc
-	}
-
-	err = findFunc(document)
-	if err != nil {
-		log.Printf("doFind findFunc err:%v", err)
-		return err
-	}
-
-	return nil
-
+	return httpclient
 }
 
 func DownloadImage(url, path string) error {
