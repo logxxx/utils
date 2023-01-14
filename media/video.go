@@ -34,9 +34,9 @@ type FFProbeResult struct {
 
 func CutVideoFrontAndTail(path string, start, end int) error {
 
-	videoInfo, err := GetVideoInfo(path)
+	videoInfo, err := GetMediaInfo(path)
 	if err != nil {
-		log.Errorf("CutVideoFrontAndTail GetVideoInfo err:%v", err)
+		log.Errorf("CutVideoFrontAndTail GetMediaInfo err:%v", err)
 		return err
 	}
 
@@ -61,7 +61,7 @@ func TryCut(path string) (result string) {
 
 	result = path
 
-	videoInfo, err := GetVideoInfo(path)
+	videoInfo, err := GetMediaInfo(path)
 	if err != nil {
 		return
 	}
@@ -86,7 +86,7 @@ func TrimVideo(path string) {
 
 }
 
-func GetVideoInfo(path string) (videoInfo *VideoInfo, err error) {
+func GetMediaInfo(path string) (videoInfo *VideoInfo, err error) {
 
 	args := []string{"ffprobe",
 		"-show_format",
@@ -95,7 +95,7 @@ func GetVideoInfo(path string) (videoInfo *VideoInfo, err error) {
 		path}
 	result, err := RunCmd(args)
 	if err != nil {
-		log.Errorf("GetVideoInfo RunCmd err:%v", err)
+		log.Errorf("GetMediaInfo RunCmd err:%v", err)
 		return
 	}
 
@@ -105,13 +105,19 @@ func GetVideoInfo(path string) (videoInfo *VideoInfo, err error) {
 
 	err = json.Unmarshal([]byte(result), resultObj)
 	if err != nil {
-		log.Errorf("GetVideoInfo RunCmd err:%v", err)
+		log.Errorf("GetMediaInfo RunCmd err:%v", err)
 		return
 	}
 
 	dFloat, err := strconv.ParseFloat(resultObj.Format.DurationStr, 32)
 	if err != nil {
-		log.Errorf("GetVideoInfo ParseFloat err:%v req:%v", err, resultObj.Format.DurationStr)
+		log.Errorf("GetMediaInfo ParseFloat err:%v req:%v", err, resultObj.Format.DurationStr)
+		return
+	}
+
+	size, err := strconv.ParseInt(resultObj.Format.Size, 10, 64)
+	if err != nil {
+		log.Errorf("GetMediaInfo ParseInt size err:%v req:%v", err, resultObj.Format.Size)
 		return
 	}
 
@@ -127,6 +133,7 @@ func GetVideoInfo(path string) (videoInfo *VideoInfo, err error) {
 		DurationSec: int(dFloat),
 		Width:       width,
 		Height:      height,
+		Size:        size,
 	}
 
 	return

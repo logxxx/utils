@@ -1,6 +1,12 @@
 package fileutil
 
-import "testing"
+import (
+	"github.com/logxxx/utils"
+	"github.com/logxxx/utils/log"
+	"os"
+	"strings"
+	"testing"
+)
 
 func TestWriteToFileWithRename(t *testing.T) {
 	for i := 0; i < 10; i++ {
@@ -11,4 +17,31 @@ func TestWriteToFileWithRename(t *testing.T) {
 		t.Logf("%v newPath:%v", i, newPath)
 	}
 
+}
+
+func TestFindFile(t *testing.T) {
+	result, err := FindFile("N:\\source", func(filepath string) bool {
+		if strings.Contains(filepath, "微信录屏") {
+			return false
+		}
+		return true
+	}, func(filepath string) bool {
+
+		if !strings.Contains(filepath, ".jpg") {
+			return false
+		}
+		stat, err := os.Stat(filepath)
+		if err != nil {
+			return false
+		}
+		log.Infof("path:%v size:%v", filepath, utils.GetShowSize(stat.Size()))
+		if stat.Size() < 1*1024*1024 {
+			return false
+		}
+		return true
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("result:%v", result)
 }

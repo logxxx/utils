@@ -242,9 +242,9 @@ func IsSizeLargeThanMB(path string, delta int64) bool {
 
 func TrimVideo(downloadPath string, isTop, isBottom bool) error {
 
-	videoInfo, err := media.GetVideoInfo(downloadPath)
+	videoInfo, err := media.GetMediaInfo(downloadPath)
 	if err != nil {
-		log.Errorf("GetVideoInfo err:%v", err)
+		log.Errorf("GetMediaInfo err:%v", err)
 		return err
 	}
 
