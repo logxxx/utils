@@ -2,12 +2,15 @@ package netutil
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/logxxx/utils/objutil"
 	"github.com/logxxx/utils/reqresp"
 	"sort"
+	"strings"
 	"time"
 )
 
 type IPLogger struct {
+	WhiteList []string //只记录白名单中的访问情况
 	Statistic Statistic
 	Records   []*Record
 }
@@ -19,14 +22,14 @@ type Statistic struct {
 	CountPerMinute map[int64]int64
 	CountPerHour   map[int64]int64
 	IPCount        map[string]int64
+	PathCount      map[string]int64
 }
 
 type Record struct {
 	CreateTime    int64
 	CreateTimeStr string
 	ReqIP         string
-	ReqURL        string
-	ReqURI        string
+	ReqPath       string
 }
 
 type GetRecordsResp struct {
@@ -39,11 +42,12 @@ type GetStatisticResp struct {
 	TotalIP         int64
 	CountsPerMinute []*CountPerTimeSlice
 	CountsPerHour   []*CountPerTimeSlice
-	IPTop100        []*IPCount
+	IPTop100        []*CountInfo
+	PathCount       []*CountInfo
 }
 
-type IPCount struct {
-	IP    string
+type CountInfo struct {
+	Key   string
 	Count int64
 }
 
@@ -66,6 +70,7 @@ func NewIPLogger() *IPLogger {
 			CountPerMinute: make(map[int64]int64, 0),
 			CountPerHour:   make(map[int64]int64, 0),
 			IPCount:        make(map[string]int64, 0),
+			PathCount:      make(map[string]int64, 0),
 		},
 		Records: nil,
 	}
@@ -80,34 +85,53 @@ func GetIPLogger() *IPLogger {
 	return _ipLogger
 }
 
-func (s *Statistic) Add(reqIP string) {
+func (s *Statistic) Add(reqIP, reqPath string) {
 	s.TotalCount++
 	key := time.Now().Unix() / 60 * 60
 	s.CountPerMinute[key]++
 	key = time.Now().Unix() / 3600 * 3600
 	s.CountPerHour[key]++
 	s.IPCount[reqIP]++
+	s.PathCount[reqPath]++
 }
 
-func (l *IPLogger) Add(reqIP, reqURL, reqURI string) {
+func (l *IPLogger) Add(reqIP, reqPath string) {
 	now := time.Now()
 	record := &Record{
 		CreateTime:    now.Unix(),
 		CreateTimeStr: now.Format("2006-01-02 15:04:05"),
 		ReqIP:         reqIP,
-		ReqURL:        reqURL,
-		ReqURI:        reqURI,
+		ReqPath:       reqPath,
 	}
 
 	l.Records = append(l.Records, record)
-	l.Statistic.Add(reqIP)
+	l.Statistic.Add(reqIP, reqPath)
 }
 
 func (l *IPLogger) Log(c *gin.Context) {
-	reqIP := c.RemoteIP()
+
 	reqURL := c.Request.URL.String()
-	reqURI := c.Request.RequestURI
-	l.Add(reqIP, reqURL, reqURI)
+	if !l.IsInWhiteList(reqURL) {
+		return
+	}
+
+	reqIP := c.RemoteIP()
+
+	l.Add(reqIP, reqURL)
+}
+
+func (l *IPLogger) IsInWhiteList(reqURL string) bool {
+	for _, white := range l.WhiteList {
+		if strings.Contains(reqURL, white) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (l *IPLogger) AddPathToWhiteList(path ...string) {
+	l.WhiteList = objutil.RemoveDuplicate(append(l.WhiteList, path...))
 }
 
 func (l *IPLogger) RegisterAPI_Clean(c *gin.Context) {
@@ -168,15 +192,16 @@ func (l *IPLogger) RegisterAPI_GetStatistic(c *gin.Context) {
 
 	resp.CountsPerHour = countsPerHour
 
-	ipsCount := make([]*IPCount, 0)
+	// >>> IP TOP100
+	ipsCount := make([]*CountInfo, 0)
 	for ip, count := range l.Statistic.IPCount {
-		ipsCount = append(ipsCount, &IPCount{
-			IP:    ip,
+		ipsCount = append(ipsCount, &CountInfo{
+			Key:   ip,
 			Count: count,
 		})
 	}
 
-	sort.Slice(countsPerHour, func(i, j int) bool { //倒序
+	sort.Slice(ipsCount, func(i, j int) bool { //倒序
 		return ipsCount[i].Count > ipsCount[j].Count
 	})
 
@@ -185,6 +210,25 @@ func (l *IPLogger) RegisterAPI_GetStatistic(c *gin.Context) {
 	}
 
 	resp.IPTop100 = ipsCount
+
+	// <<< IP TOP100
+
+	// >>> PATH COUNT
+	pathCount := make([]*CountInfo, 0)
+	for path, count := range l.Statistic.PathCount {
+		pathCount = append(pathCount, &CountInfo{
+			Key:   path,
+			Count: count,
+		})
+	}
+
+	sort.Slice(pathCount, func(i, j int) bool { //倒序
+		return pathCount[i].Count > pathCount[j].Count
+	})
+
+	resp.PathCount = pathCount
+
+	// <<< PATH COUNT
 
 	resp.TotalIP = int64(len(l.Statistic.IPCount))
 
