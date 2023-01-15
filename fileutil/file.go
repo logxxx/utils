@@ -222,6 +222,8 @@ func CopyFile(srcPath, dstPath string, pem fs.FileMode) error {
 	}
 	defer srcFile.Close()
 
+	os.MkdirAll(filepath.Dir(dstPath), pem)
+
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
 		return err

@@ -96,7 +96,7 @@ func GetMediaInfo(path string) (videoInfo *VideoInfo, err error) {
 	result, err := RunCmd(args)
 	if err != nil {
 		log.Errorf("GetMediaInfo RunCmd err:%v", err)
-		return
+
 	}
 
 	//log.Infof("videoInfo:%v", result)
@@ -106,19 +106,19 @@ func GetMediaInfo(path string) (videoInfo *VideoInfo, err error) {
 	err = json.Unmarshal([]byte(result), resultObj)
 	if err != nil {
 		log.Errorf("GetMediaInfo RunCmd err:%v", err)
-		return
+
 	}
 
 	dFloat, err := strconv.ParseFloat(resultObj.Format.DurationStr, 32)
 	if err != nil {
 		log.Errorf("GetMediaInfo ParseFloat err:%v req:%v", err, resultObj.Format.DurationStr)
-		return
+
 	}
 
 	size, err := strconv.ParseInt(resultObj.Format.Size, 10, 64)
 	if err != nil {
 		log.Errorf("GetMediaInfo ParseInt size err:%v req:%v", err, resultObj.Format.Size)
-		return
+
 	}
 
 	width := 0
