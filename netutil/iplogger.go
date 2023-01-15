@@ -18,6 +18,7 @@ type Statistic struct {
 	TotalCount     int64
 	CountPerMinute map[int64]int64
 	CountPerHour   map[int64]int64
+	IPCount        map[string]int64
 }
 
 type Record struct {
@@ -35,8 +36,15 @@ type GetRecordsResp struct {
 type GetStatisticResp struct {
 	CreateTimeStr   string
 	TotalCount      int64
+	TotalIP         int64
 	CountsPerMinute []*CountPerTimeSlice
 	CountsPerHour   []*CountPerTimeSlice
+	IPTop100        []*IPCount
+}
+
+type IPCount struct {
+	IP    string
+	Count int64
 }
 
 type CountPerTimeSlice struct {
@@ -57,6 +65,7 @@ func NewIPLogger() *IPLogger {
 			TotalCount:     0,
 			CountPerMinute: make(map[int64]int64, 0),
 			CountPerHour:   make(map[int64]int64, 0),
+			IPCount:        make(map[string]int64, 0),
 		},
 		Records: nil,
 	}
@@ -71,18 +80,16 @@ func GetIPLogger() *IPLogger {
 	return _ipLogger
 }
 
-func (s *Statistic) Add() {
+func (s *Statistic) Add(reqIP string) {
 	s.TotalCount++
 	key := time.Now().Unix() / 60 * 60
 	s.CountPerMinute[key]++
 	key = time.Now().Unix() / 3600 * 3600
 	s.CountPerHour[key]++
+	s.IPCount[reqIP]++
 }
 
-func (l *IPLogger) Log(c *gin.Context) {
-	reqIP := c.RemoteIP()
-	reqURL := c.Request.URL.String()
-	reqURI := c.Request.RequestURI
+func (l *IPLogger) Add(reqIP, reqURL, reqURI string) {
 	now := time.Now()
 	record := &Record{
 		CreateTime:    now.Unix(),
@@ -92,8 +99,15 @@ func (l *IPLogger) Log(c *gin.Context) {
 		ReqURI:        reqURI,
 	}
 
-	l.Records = append([]*Record{record}, l.Records...)
-	l.Statistic.Add()
+	l.Records = append(l.Records, record)
+	l.Statistic.Add(reqIP)
+}
+
+func (l *IPLogger) Log(c *gin.Context) {
+	reqIP := c.RemoteIP()
+	reqURL := c.Request.URL.String()
+	reqURI := c.Request.RequestURI
+	l.Add(reqIP, reqURL, reqURI)
 }
 
 func (l *IPLogger) RegisterAPI_Clean(c *gin.Context) {
@@ -102,9 +116,19 @@ func (l *IPLogger) RegisterAPI_Clean(c *gin.Context) {
 }
 
 func (l *IPLogger) RegisterAPI_GetRecords(c *gin.Context) {
-	resp := &GetRecordsResp{
-		Records: l.Records,
+	resp := &GetRecordsResp{}
+
+	records := make([]*Record, 0)
+	for i := len(l.Records) - 1; i >= 0; i-- {
+		records = append(records, l.Records[i])
 	}
+
+	if len(records) > 100 {
+		records = records[:100]
+	}
+
+	resp.Records = records
+
 	reqresp.MakeResp(c, resp)
 }
 
@@ -143,6 +167,26 @@ func (l *IPLogger) RegisterAPI_GetStatistic(c *gin.Context) {
 	})
 
 	resp.CountsPerHour = countsPerHour
+
+	ipsCount := make([]*IPCount, 0)
+	for ip, count := range l.Statistic.IPCount {
+		ipsCount = append(ipsCount, &IPCount{
+			IP:    ip,
+			Count: count,
+		})
+	}
+
+	sort.Slice(countsPerHour, func(i, j int) bool { //倒序
+		return ipsCount[i].Count > ipsCount[j].Count
+	})
+
+	if len(ipsCount) > 100 {
+		ipsCount = ipsCount[:100]
+	}
+
+	resp.IPTop100 = ipsCount
+
+	resp.TotalIP = int64(len(l.Statistic.IPCount))
 
 	reqresp.MakeResp(c, resp)
 
