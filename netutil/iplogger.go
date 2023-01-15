@@ -115,9 +115,26 @@ func (l *IPLogger) Log(c *gin.Context) {
 		return
 	}
 
-	reqIP := c.RemoteIP()
+	reqIP := getRemoteIP(c)
 
 	l.Add(reqIP, reqURL)
+}
+
+func getRemoteIP(c *gin.Context) (reqIP string) {
+
+	reqIP = c.Request.Header.Get("X-Real-IP")
+	if reqIP != "" {
+		return
+	}
+
+	reqIP = c.Request.Header.Get("X-Forwarded-For")
+	if reqIP != "" {
+		return
+	}
+
+	reqIP = c.RemoteIP()
+
+	return
 }
 
 func (l *IPLogger) IsInWhiteList(reqURL string) bool {
