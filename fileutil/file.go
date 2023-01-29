@@ -1,6 +1,7 @@
 package fileutil
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/logxxx/utils/log"
@@ -248,4 +249,34 @@ func IsDir(path string) bool {
 		return false
 	}
 	return fileInfo.IsDir()
+}
+
+func ReadByLine(filePath string, lineHandler func(string) error) error {
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Errorf("ReadByLine Open err:%v filePath:%v", err, filePath)
+		return err
+	}
+	buf := bufio.NewReader(file)
+	for {
+		line, _, err := buf.ReadLine()
+		if err != nil {
+			if err == io.EOF {
+				//log.Printf("读到了EOF")
+				break
+			}
+			log.Errorf("ReadByLine ReadLine err:%vv", err)
+			return err
+		}
+		if len(line) == 0 {
+			continue
+		}
+
+		if err := lineHandler(string(line)); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
