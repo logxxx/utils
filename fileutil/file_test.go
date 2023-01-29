@@ -45,3 +45,13 @@ func TestFindFile(t *testing.T) {
 	}
 	t.Logf("result:%v", result)
 }
+
+func TestGetUniqFilePath(t *testing.T) {
+	filePath := "./test.txt"
+	WriteToFile([]byte("hehe"), filePath)
+	filePath2 := GetUniqFilePath(filePath)
+	t.Logf("filePath2:%v", filePath2)
+	WriteToFile([]byte("haha"), filePath2)
+	filePath3 := GetUniqFilePath(filePath)
+	t.Logf("filePath3:%v", filePath3)
+}

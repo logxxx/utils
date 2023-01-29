@@ -124,6 +124,25 @@ func WriteJsonToFile(obj interface{}, filePath string) error {
 	return nil
 }
 
+func GetUniqFilePath(filePath string) string {
+	if !HasFile(filePath) {
+		return filePath
+	}
+	dir := filepath.Dir(filePath)
+	fileName := filepath.Base(filePath)
+	ext := filepath.Ext(fileName)
+	pureFileName := strings.TrimSuffix(fileName, ext)
+
+	for i := 1; i < 100000; i++ {
+		fixedFileName := fmt.Sprintf("%v(%v)%v", pureFileName, i, ext)
+		fixedFilePath := filepath.Join(dir, fixedFileName)
+		if !HasFile(fixedFilePath) {
+			return fixedFilePath
+		}
+	}
+	return filePath
+}
+
 func FindFile(rootPath string, checkDirFn func(string) bool, checkFileFn func(filepath string) bool) (string, error) {
 	subFiles, err := ioutil.ReadDir(rootPath)
 	if err != nil {
@@ -193,7 +212,7 @@ func CopyDir(srcDir, dstDir string) error {
 			//log.Debugf("CopyDir CopyFile %v => %v", srcPath, dstPath)
 			err := CopyFile(srcPath, dstPath, f.Mode())
 			if err != nil {
-				log.Errorf("CopyDir Walk CopyFile err:%v srcPath:%v dstPath:%v", err, dstPath, srcPath, dstPath)
+				log.Errorf("CopyDir Walk CopyFile err:%v srcPath:%v dstPath:%v", err, srcPath, dstPath)
 				return err
 			}
 		}
