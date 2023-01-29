@@ -41,8 +41,12 @@ func TryGetFileSize(url string, setHeaderFuncs ...func(httpReq *http.Request)) (
 
 }
 
-func HttpDo(req *http.Request) (int, []byte, error) {
-	httpResp, err := http.DefaultClient.Do(req)
+func HttpDo(req *http.Request, httpClient ...*http.Client) (int, []byte, error) {
+	client := http.DefaultClient
+	if len(httpClient) > 0 {
+		client = httpClient[0]
+	}
+	httpResp, err := client.Do(req)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -57,8 +61,14 @@ func HttpDo(req *http.Request) (int, []byte, error) {
 
 }
 
-func HttpGetRaw(url string) (int, []byte, error) {
-	httpResp, err := http.Get(url)
+func HttpGetRaw(url string, httpClient ...*http.Client) (int, []byte, error) {
+
+	client := http.DefaultClient
+	if len(httpClient) > 0 {
+		client = httpClient[0]
+	}
+
+	httpResp, err := client.Get(url)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -72,8 +82,14 @@ func HttpGetRaw(url string) (int, []byte, error) {
 	return httpResp.StatusCode, respBytes, nil
 }
 
-func HttpReqGet(req *http.Request, resp interface{}) (int, error) {
-	status, respBytes, err := HttpDo(req)
+func HttpReqGet(req *http.Request, resp interface{}, httpClient ...*http.Client) (int, error) {
+
+	client := http.DefaultClient
+	if len(httpClient) > 0 {
+		client = httpClient[0]
+	}
+
+	status, respBytes, err := HttpDo(req, client)
 	if err != nil {
 		return 0, err
 	}
@@ -89,9 +105,14 @@ func HttpReqGet(req *http.Request, resp interface{}) (int, error) {
 
 }
 
-func HttpGet(url string, resp interface{}) (int, error) {
+func HttpGet(url string, resp interface{}, httpClient ...*http.Client) (int, error) {
 
-	status, respBytes, err := HttpGetRaw(url)
+	client := http.DefaultClient
+	if len(httpClient) > 0 {
+		client = httpClient[0]
+	}
+
+	status, respBytes, err := HttpGetRaw(url, client)
 	if err != nil {
 		return 0, err
 	}
@@ -109,7 +130,12 @@ func HttpGet(url string, resp interface{}) (int, error) {
 
 }
 
-func HttpPost(url string, reqBody interface{}, resp interface{}) (int, error) {
+func HttpPost(url string, reqBody interface{}, resp interface{}, httpClient ...*http.Client) (int, error) {
+
+	client := http.DefaultClient
+	if len(httpClient) > 0 {
+		client = httpClient[0]
+	}
 
 	reqBodyBytes := make([]byte, 0)
 	var err error
@@ -121,7 +147,7 @@ func HttpPost(url string, reqBody interface{}, resp interface{}) (int, error) {
 	}
 
 	reqBodyBuf := bytes.NewBuffer(reqBodyBytes)
-	httpResp, err := http.Post(url, "application/json", reqBodyBuf)
+	httpResp, err := client.Post(url, "application/json", reqBodyBuf)
 	if err != nil {
 		return 0, err
 	}
