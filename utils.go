@@ -121,8 +121,8 @@ func JsonToString(data interface{}) string {
 	return string(jsonData)
 }
 
-func ShortTitle(title string) string {
-	return ShortName(TrimAt(TrimBracket(TrimUnderscore(EscapeEmoji(EscapeFileName(title))))))
+func ShortTitle(title string, limit ...int) string {
+	return ShortName(TrimAt(TrimBracket(TrimUnderscore(EscapeEmoji(EscapeFileName(title))))), limit...)
 }
 
 func TrimAt(title string) string {
