@@ -163,15 +163,20 @@ func TrimUnderscore(title string) string {
 	return title[idx+len("_"):]
 }
 
-func ShortName(input string) string {
+func ShortName(input string, reqLimit ...int) string {
 
 	runes := []rune(input)
 
-	if len(runes) <= 20 {
+	limit := 20
+	if len(reqLimit) > 0 {
+		limit = reqLimit[0]
+	}
+
+	if len(runes) <= limit {
 		return input
 	}
 
-	return string(runes[:20])
+	return string(runes[:limit])
 }
 
 func EscapeFileName(input string) string {
