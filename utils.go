@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/logxxx/utils/log"
@@ -282,4 +284,10 @@ func Extract(content string, begin string, end string) string {
 		return ""
 	}
 	return content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
+}
+
+func MD5(str string) string {
+	h := md5.New()
+	h.Write([]byte(str))
+	return hex.EncodeToString(h.Sum(nil))
 }
