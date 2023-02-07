@@ -1,7 +1,7 @@
 package counter_test
 
 import (
-	"github.com/logxxx/mybili_pkg/utils/counter"
+	"github.com/logxxx/utils/counter"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"

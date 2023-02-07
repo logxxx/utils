@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/logxxx/mybili_pkg/utils/log"
+	"github.com/logxxx/utils/log"
 	"io/ioutil"
 	"time"
 )
