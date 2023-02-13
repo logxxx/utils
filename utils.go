@@ -8,6 +8,7 @@ import (
 	"github.com/logxxx/utils/log"
 	"github.com/logxxx/utils/media"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -295,4 +296,12 @@ func MD5(str string) string {
 	h := md5.New()
 	h.Write([]byte(str))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+func GetRandomOne(req []string) string {
+	if len(req) <= 0 {
+		return ""
+	}
+	rand.Seed(time.Now().UnixNano())
+	return req[len(req)]
 }
