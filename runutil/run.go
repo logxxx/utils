@@ -42,7 +42,7 @@ func RunSafe(fn func() error) error {
 	return fn()
 }
 
-func WaitForExit(closeFunc func()) {
+func WaitForExit(closeFns ...func()) {
 	doneChan := make(chan bool)
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
@@ -50,8 +50,8 @@ func WaitForExit(closeFunc func()) {
 		select {
 		case s := <-signalChan:
 			fmt.Printf("captured %v. exiting...\n", s)
-			if closeFunc != nil {
-				closeFunc()
+			for _, fn := range closeFns {
+				fn()
 			}
 			close(doneChan)
 		case <-doneChan:
