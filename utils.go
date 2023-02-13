@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/logxxx/utils/log"
-	"github.com/logxxx/utils/media"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -246,38 +245,6 @@ func IsSizeLargeThanMB(path string, delta int64) bool {
 	size := file.Size()
 	log.Debugf("size:%.2fMB file:%v", float64(size)/1024/1024, path)
 	return size > delta*1024*1024
-}
-
-func TrimVideo(downloadPath string, isTop, isBottom bool) error {
-
-	videoInfo, err := media.GetMediaInfo(downloadPath)
-	if err != nil {
-		log.Errorf("GetMediaInfo err:%v", err)
-		return err
-	}
-
-	tmpFile := downloadPath + ".mp4"
-
-	top := 0
-	bottom := 0
-	if isTop {
-		top = 100
-	}
-	if isBottom {
-		bottom = 100
-	}
-
-	command := fmt.Sprintf("ffmpeg -i %v -vf crop=%v:%v:%v:%v %v -y", downloadPath, videoInfo.Width, videoInfo.Height-(top+bottom), 0, top, tmpFile)
-	_, err = media.RunCmd(strings.Split(command, " "))
-	if err != nil {
-		log.Errorf("RunCmd err:%v", err)
-		return err
-	}
-
-	os.Remove(downloadPath)
-	os.Rename(tmpFile, downloadPath)
-
-	return nil
 }
 
 func Extract(content string, begin string, end string) string {

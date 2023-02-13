@@ -82,10 +82,6 @@ func TryCut(path string) (result string) {
 
 }
 
-func TrimVideo(path string) {
-
-}
-
 func GetMediaInfo(path string) (videoInfo *VideoInfo, err error) {
 
 	args := []string{"ffprobe",
@@ -265,4 +261,36 @@ func getCutSec(videoInfo *VideoInfo) (int, int) {
 	//}
 
 	return startSec, endSec
+}
+
+func TrimVideo(downloadPath string, isTop, isBottom bool) error {
+
+	videoInfo, err := GetMediaInfo(downloadPath)
+	if err != nil {
+		log.Errorf("GetMediaInfo err:%v", err)
+		return err
+	}
+
+	tmpFile := downloadPath + ".mp4"
+
+	top := 0
+	bottom := 0
+	if isTop {
+		top = 100
+	}
+	if isBottom {
+		bottom = 100
+	}
+
+	command := fmt.Sprintf("ffmpeg -i %v -vf crop=%v:%v:%v:%v %v -y", downloadPath, videoInfo.Width, videoInfo.Height-(top+bottom), 0, top, tmpFile)
+	_, err = RunCmd(strings.Split(command, " "))
+	if err != nil {
+		log.Errorf("RunCmd err:%v", err)
+		return err
+	}
+
+	os.Remove(downloadPath)
+	os.Rename(tmpFile, downloadPath)
+
+	return nil
 }
