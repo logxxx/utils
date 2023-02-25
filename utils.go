@@ -272,3 +272,7 @@ func GetRandomOne(req []string) string {
 	rand.Seed(time.Now().UnixNano())
 	return req[len(req)]
 }
+
+func FormatTimeSafe(t time.Time) string {
+	return t.Format("20060102_150405")
+}
