@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/logxxx/utils"
+	"github.com/logxxx/utils/fileutil"
 	"github.com/logxxx/utils/log"
 	"io/ioutil"
 	"os"
@@ -146,9 +147,9 @@ func (w *FileKV) set(fileName, key string, value interface{}) error {
 		}
 	}
 
-	err = ioutil.WriteFile(fileName, newData, 0766)
+	err = fileutil.WriteToFile(newData, fileName)
 	if err != nil {
-		log.Errorf("FileKV.Set ioutil.WriteFile err:%v fileName:%v", err, fileName)
+		log.Errorf("FileKV.Set WriteToFile err:%v fileName:%v", err, fileName)
 		return err
 	}
 
