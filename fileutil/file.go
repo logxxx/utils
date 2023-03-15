@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/logxxx/utils/log"
+	"gopkg.in/yaml.v2"
 	"io"
 	"io/fs"
 	"io/ioutil"
@@ -110,8 +111,34 @@ func ReadJsonFile(fileName string, obj interface{}) error {
 	return nil
 }
 
+func ReadYamlFile(fileName string, obj interface{}) error {
+	content, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return err
+	}
+	err = yaml.Unmarshal(content, obj)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func WriteJsonToFile(obj interface{}, filePath string) error {
 	data, err := json.MarshalIndent(obj, " ", "")
+	if err != nil {
+		return err
+	}
+
+	err = WriteToFile(data, filePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func WriteYamlToFile(obj interface{}, filePath string) error {
+	data, err := yaml.Marshal(obj)
 	if err != nil {
 		return err
 	}
