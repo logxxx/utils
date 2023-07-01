@@ -305,3 +305,17 @@ func GetRandomOne(req []string) string {
 func FormatTimeSafe(t time.Time) string {
 	return t.Format("20060102_150405")
 }
+
+func RemoveDuplicate(input []string) []string {
+	resp := make([]string, 0)
+	uniq := make(map[string]bool, 0)
+	for _, elem := range input {
+		_, ok := uniq[elem]
+		if ok {
+			continue
+		}
+		uniq[elem] = true
+		resp = append(resp, elem)
+	}
+	return resp
+}
