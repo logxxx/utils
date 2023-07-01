@@ -259,7 +259,7 @@ func Extract(content string, begin string, end string) string {
 	return content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
 }
 
-func ExtractAll(content string, begin string, end string) []string {
+func ExtractAll(content string, begin string, end string, keepBucket bool) []string {
 
 	resp := make([]string, 0)
 
@@ -275,7 +275,12 @@ func ExtractAll(content string, begin string, end string) []string {
 		if endIdx < 0 {
 			break
 		}
-		resp = append(resp, content[beginIdx+len(begin):beginIdx+len(begin)+endIdx])
+
+		result := content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
+		if keepBucket {
+			result = begin + result + end
+		}
+		resp = append(resp, result)
 		content = content[(beginIdx + endIdx):]
 	}
 
