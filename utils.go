@@ -259,6 +259,30 @@ func Extract(content string, begin string, end string) string {
 	return content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
 }
 
+func ExtractAll(content string, begin string, end string) []string {
+
+	resp := make([]string, 0)
+
+	for {
+		if content == "" {
+			break
+		}
+		beginIdx := strings.Index(content, begin)
+		if beginIdx < 0 {
+			break
+		}
+		endIdx := strings.Index(content[beginIdx+len(begin):], end)
+		if endIdx < 0 {
+			break
+		}
+		resp = append(resp, content[beginIdx+len(begin):beginIdx+len(begin)+endIdx])
+		content = content[(beginIdx + endIdx):]
+	}
+
+	return resp
+
+}
+
 func MD5(str string) string {
 	h := md5.New()
 	h.Write([]byte(str))
