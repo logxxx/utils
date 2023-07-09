@@ -22,3 +22,14 @@ func TestExtractAll(t *testing.T) {
 	resp := ExtractAll(req, "https:", ".mov", true)
 	log.Printf("resp:%v", resp)
 }
+
+func TestRemoveDuplicate(t *testing.T) {
+	req := []string{
+		"https://video.weibo.com/media/play?livephoto=https%3A%2F%2Flivephoto.us.sinaimg.cn%2F003dwdargx086F50m58j0f0f0100abAw0k01.mov",
+		"https://video.weibo.com/media/play?livephoto=https%3A%2F%2Flivephoto.us.sinaimg.cn%2F002NuLrFgx086F50pczu0f0f0100c4040k01.mov",
+		"https://video.weibo.com/media/play?livephoto=https%3A%2F%2Flivephoto.us.sinaimg.cn%2F003dwdargx086F50m58j0f0f0100abAw0k01.mov",
+		"https://video.weibo.com/media/play?livephoto=https%3A%2F%2Flivephoto.us.sinaimg.cn%2F002NuLrFgx086F50pczu0f0f0100c4040k01.mov",
+	}
+	resp := RemoveDuplicate(req)
+	log.Printf("resp(%v):%v", len(resp), resp)
+}
