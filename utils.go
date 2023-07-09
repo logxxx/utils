@@ -80,6 +80,15 @@ func Contains(input string, slice []string) bool {
 	return false
 }
 
+func ContainsI64(input int64, slice []int64) bool {
+	for _, elem := range slice {
+		if elem == input {
+			return true
+		}
+	}
+	return false
+}
+
 func IsDir(path string) bool {
 	stat, err := os.Stat(path)
 	if err != nil {
