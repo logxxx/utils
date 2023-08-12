@@ -51,6 +51,23 @@ func getValidPath(dir, fileNameWithExt string) (string, string) {
 
 }
 
+func AppendToFile(filePath string, content string) error {
+
+	log.Debugf("AppendToFile path:%v content:%v", filePath, content)
+
+	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+	_, err = f.WriteString(content)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func WriteToFile(data []byte, filePath string) error {
 	fileDir := filepath.Dir(filePath)
 	fileName := filepath.Base(filePath)

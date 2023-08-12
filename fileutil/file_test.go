@@ -1,11 +1,13 @@
 package fileutil
 
 import (
+	"fmt"
 	"github.com/logxxx/utils"
 	"github.com/logxxx/utils/log"
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestWriteToFileWithRename(t *testing.T) {
@@ -54,4 +56,26 @@ func TestGetUniqFilePath(t *testing.T) {
 	WriteToFile([]byte("haha"), filePath2)
 	filePath3 := GetUniqFilePath(filePath)
 	t.Logf("filePath3:%v", filePath3)
+}
+
+func TestAppendToFile(t *testing.T) {
+	fileName := fmt.Sprintf("%v.txt", time.Now().UnixNano())
+	defer func() {
+		os.Remove(fileName)
+	}()
+	have := []string{"hello", "xxx", " world"}
+	want := "helloxxx world"
+	for _, e := range have {
+		err := AppendToFile(fileName, e)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	result, err := os.ReadFile(fileName)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(result) != want {
+		t.Fatalf("result:%v want:%v", string(result), want)
+	}
 }
