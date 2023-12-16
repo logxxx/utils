@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/logxxx/utils/log"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -192,7 +192,7 @@ func ShortName(input string, reqLimit ...int) string {
 
 func EscapeFileName(input string) string {
 
-	invalids := `~-.\/:*?"<>| `
+	invalids := `！“”~-.\/:*?"<>|  `
 
 	for _, invalid := range invalids {
 		input = strings.ReplaceAll(input, string(invalid), "")
@@ -261,10 +261,16 @@ func Extract(content string, begin string, end string) string {
 	if beginIdx < 0 {
 		return ""
 	}
+
+	if end == "" {
+		return content[beginIdx+len(begin):]
+	}
+
 	endIdx := strings.Index(content[beginIdx+len(begin):], end)
 	if endIdx < 0 {
 		return ""
 	}
+
 	return content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
 }
 

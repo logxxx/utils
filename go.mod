@@ -12,8 +12,8 @@ require (
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.26.0 // indirect
+	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.1
-	github.com/vj1024/go-units v1.0.1
 	golang.org/x/image v0.4.0
 	gopkg.in/bsm/ratelimit.v1 v1.0.0-20170922094635-f56db5e73a5e // indirect
 	gopkg.in/redis.v3 v3.6.4

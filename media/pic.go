@@ -1,7 +1,7 @@
 package media
 
 import (
-	"github.com/logxxx/utils/log"
+	log "github.com/sirupsen/logrus"
 	"image/jpeg"
 	"os"
 )

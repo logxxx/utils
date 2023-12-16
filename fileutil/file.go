@@ -3,8 +3,9 @@ package fileutil
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/logxxx/utils/log"
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/fs"
@@ -24,16 +25,22 @@ func IsExists(path string) bool {
 	return true
 }
 
-func WriteToFileWithRename(data []byte, dir, fileName string) (string, error) {
-	dir, fileName = getValidPath(dir, fileName)
+func WriteToFileWithRename(data []byte, filePath string) (string, error) {
+	dir := filepath.Dir(filePath)
+	fileName := filepath.Base(filePath)
+	var err error
+	dir, fileName, err = getValidPath(dir, fileName)
+	if err != nil {
+		return "", err
+	}
 	newPath := filepath.Join(dir, fileName)
 	return newPath, WriteToFile(data, newPath)
 }
 
-func getValidPath(dir, fileNameWithExt string) (string, string) {
+func getValidPath(dir, fileNameWithExt string) (string, string, error) {
 
 	if !HasFile(filepath.Join(dir, fileNameWithExt)) {
-		return dir, fileNameWithExt
+		return dir, fileNameWithExt, nil
 	}
 
 	i := 0
@@ -41,10 +48,13 @@ func getValidPath(dir, fileNameWithExt string) (string, string) {
 	fileName := strings.TrimRight(fileNameWithExt, fileExt)
 	for {
 		i++
+		if i > 1000 {
+			return "", "", errors.New("try too many times")
+		}
 		fileNameWithExt = fmt.Sprintf("%v_%v%v", fileName, i, fileExt)
 
 		if !HasFile(filepath.Join(dir, fileNameWithExt)) {
-			return dir, fileNameWithExt
+			return dir, fileNameWithExt, nil
 		}
 
 	}
@@ -54,6 +64,8 @@ func getValidPath(dir, fileNameWithExt string) (string, string) {
 func AppendToFile(filePath string, content string) error {
 
 	log.Debugf("AppendToFile path:%v content:%v", filePath, content)
+
+	os.MkdirAll(filepath.Dir(filePath), 0755)
 
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
