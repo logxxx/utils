@@ -256,7 +256,7 @@ func IsSizeLargeThanMB(path string, delta int64) bool {
 	return size > delta*1024*1024
 }
 
-func Extract(content string, begin string, end string) string {
+func Extract(content string, begin string, end string) (resp string) {
 	beginIdx := strings.Index(content, begin)
 	if beginIdx < 0 {
 		return ""
@@ -271,7 +271,9 @@ func Extract(content string, begin string, end string) string {
 		return ""
 	}
 
-	return content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
+	resp = content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
+
+	return resp
 }
 
 func ExtractAll(content string, begin string, end string, keepBucket bool) []string {

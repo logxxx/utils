@@ -8,4 +8,9 @@ func TestTryGetFileSize(t *testing.T) {
 	resp := TryGetFileSize(reqURL)
 	t.Logf("resp:%v", resp)
 
+	err := DownloadToFile(reqURL, "test.jpg")
+	if err != nil {
+		panic(err)
+	}
+
 }

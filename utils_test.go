@@ -2,6 +2,7 @@ package utils
 
 import (
 	log "github.com/sirupsen/logrus"
+	"strings"
 	"testing"
 )
 
@@ -48,4 +49,12 @@ func TestExtract(t *testing.T) {
 主题:李沐-`
 	resp := Extract(req, "视频地址:", "\n")
 	t.Logf("resp:%v", resp)
+}
+
+func TestExtract2(t *testing.T) {
+	input := "阿朱胆子可真大啊 http://t.cn/A6lRhL4g"
+	resp := Extract(input, "http", "")
+	t.Logf("resp:%v", "http"+resp)
+	resp2 := strings.ReplaceAll(input, resp, "")
+	t.Logf("resp2:%v", resp2)
 }
