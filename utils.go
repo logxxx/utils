@@ -5,11 +5,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/logxxx/utils/log"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -299,4 +300,14 @@ func GetRandomOne(req []string) string {
 
 func FormatTimeSafe(t time.Time) string {
 	return t.Format("20060102_150405")
+}
+
+func IsPositiveNum(input string) bool {
+	num, _ := strconv.Atoi(input)
+	return num > 0
+}
+
+func ToI64(input string) int64 {
+	resp, _ := strconv.ParseInt(input, 10, 64)
+	return resp
 }

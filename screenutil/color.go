@@ -3,7 +3,7 @@ package screen
 import (
 	"fmt"
 	"github.com/logxxx/utils"
-	"github.com/logxxx/utils/log"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 

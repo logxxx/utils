@@ -2,7 +2,7 @@ package fileutil
 
 import (
 	"github.com/logxxx/utils"
-	"github.com/logxxx/utils/log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 	"testing"

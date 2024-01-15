@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -83,4 +84,19 @@ func SetHttpProxy(proxyURL string) (httpclient *http.Client) {
 		},
 	}
 	return httpclient
+}
+
+func ApplyFreePort() (int, error) {
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		return 0, err
+	}
+
+	port := listener.Addr().(*net.TCPAddr).Port
+	err = listener.Close()
+	if err != nil {
+		return 0, err
+	}
+
+	return port, nil
 }
