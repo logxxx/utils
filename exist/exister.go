@@ -30,11 +30,17 @@ func (e *Exister) loadFile() {
 		return
 	}
 	for _, key := range strings.Split(string(file), "\n") {
+		if key == "" {
+			continue
+		}
 		e.cache[key] = true
 	}
 }
 
 func (e *Exister) Has(key string) bool {
+	if key == "" {
+		return false
+	}
 	if e.cache[key] {
 		return true
 	}
@@ -44,11 +50,6 @@ func (e *Exister) Has(key string) bool {
 }
 
 func (e *Exister) writeFile() {
-	e.writeStep++
-	if e.writeStep < 10 {
-		return
-	}
-	e.writeStep = 0
 	os.MkdirAll(filepath.Dir(e.FilePath), 0755)
 	content := []string{}
 	for key := range e.cache {
