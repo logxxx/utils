@@ -4,12 +4,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 )
 
 type Exister struct {
 	FilePath  string
+	cacheLock sync.Mutex
 	cache     map[string]bool
-	writeStep int
 }
 
 func NewExister(filePath string) *Exister {
@@ -41,19 +42,23 @@ func (e *Exister) Has(key string) bool {
 	if key == "" {
 		return false
 	}
+	e.cacheLock.Lock()
+	defer e.cacheLock.Unlock()
 	if e.cache[key] {
 		return true
 	}
 	e.cache[key] = true
-	e.writeFile()
+	e.writeFile(key)
 	return false
 }
 
-func (e *Exister) writeFile() {
+func (e *Exister) writeFile(key string) {
 	os.MkdirAll(filepath.Dir(e.FilePath), 0755)
-	content := []string{}
-	for key := range e.cache {
-		content = append(content, key)
+
+	f, err := os.OpenFile(e.FilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		panic(err)
 	}
-	os.WriteFile(e.FilePath, []byte(strings.Join(content, "\n")), 0766)
+	defer f.Close()
+	f.WriteString(key + "\n")
 }
