@@ -355,3 +355,30 @@ func ReadByLine(filePath string, lineHandler func(string) error) error {
 
 	return nil
 }
+
+func ScanFiles(rootPath string, fn func(filePath string) error) error {
+
+	if fn == nil {
+		return errors.New("fn empty")
+	}
+
+	childs, err := os.ReadDir(rootPath)
+	if err != nil {
+		return err
+	}
+
+	childDirs := []string{}
+	for _, c := range childs {
+		if c.IsDir() {
+			childDirs = append(childDirs, c.Name())
+		} else {
+			fn(filepath.Join(rootPath, c.Name()))
+		}
+	}
+
+	for _, c := range childDirs {
+		ScanFiles(filepath.Join(rootPath, c), fn)
+	}
+
+	return nil
+}
