@@ -356,7 +356,7 @@ func ReadByLine(filePath string, lineHandler func(string) error) error {
 	return nil
 }
 
-func ScanFiles(rootPath string, fn func(filePath string) error) error {
+func ScanFiles(rootPath string, fn func(filePath string, fileInfo os.FileInfo) error) error {
 
 	if fn == nil {
 		return errors.New("fn empty")
@@ -367,17 +367,21 @@ func ScanFiles(rootPath string, fn func(filePath string) error) error {
 		return err
 	}
 
-	childDirs := []string{}
+	childDirs := []os.FileInfo{}
 	for _, c := range childs {
+		cInfo, err := c.Info()
+		if err != nil {
+			continue
+		}
 		if c.IsDir() {
-			childDirs = append(childDirs, c.Name())
+			childDirs = append(childDirs, cInfo)
 		} else {
-			fn(filepath.Join(rootPath, c.Name()))
+			fn(filepath.Join(rootPath, cInfo.Name()), cInfo)
 		}
 	}
 
 	for _, c := range childDirs {
-		ScanFiles(filepath.Join(rootPath, c), fn)
+		ScanFiles(filepath.Join(rootPath, c.Name()), fn)
 	}
 
 	return nil
