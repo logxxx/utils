@@ -382,3 +382,15 @@ func ScanFiles(rootPath string, fn func(filePath string) error) error {
 
 	return nil
 }
+
+func RemoveFileToDir(filePath string, dirPath string) error {
+	fStat, err := os.Stat(filePath)
+	if err != nil {
+		return err
+	}
+	err = CopyFile(filePath, filepath.Join(dirPath, filepath.Base(filePath)), fStat.Mode())
+	if err != nil {
+		return err
+	}
+	return os.Remove(filePath)
+}
