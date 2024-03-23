@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -335,4 +336,16 @@ func RemoveDuplicate(input []string) []string {
 		resp = append(resp, elem)
 	}
 	return resp
+}
+
+func B64(input string) string {
+	return base64.URLEncoding.EncodeToString([]byte(input))
+}
+
+func B64To(input string) string {
+	resp, err := base64.URLEncoding.DecodeString(input)
+	if err != nil {
+		return ""
+	}
+	return string(resp)
 }
