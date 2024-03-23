@@ -324,6 +324,16 @@ func FormatTimeSafe(t time.Time) string {
 	return t.Format("20060102_150405")
 }
 
+func RemoveEmpty(input []string) (resp []string) {
+	for _, elem := range input {
+		if elem == "" {
+			continue
+		}
+		resp = append(resp, elem)
+	}
+	return
+}
+
 func RemoveDuplicate(input []string) []string {
 	resp := make([]string, 0)
 	uniq := make(map[string]bool, 0)
