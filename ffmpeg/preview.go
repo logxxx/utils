@@ -49,7 +49,7 @@ func GenePreviewVideo(filePath string, toPath string) error {
 
 	scale := fmt.Sprintf("%v:%v", width, height)
 
-	command := `ffmpeg -y -i '%v' -to 15 -vf scale=%v -pix_fmt yuv420p -level 4.2 -crf 30 -threads 8 -strict -2 '%v'`
+	command := `ffmpeg -y -i %v -to 15 -vf scale=%v -pix_fmt yuv420p -level 4.2 -crf 30 -threads 8 -strict -2 %v`
 	command = fmt.Sprintf(command, filePath, scale, toPath)
 	output, err := runCommand(command)
 	log.Debugf("GenePreviewVideo command:%v output:%v err:%v", command, string(output), err)
