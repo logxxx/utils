@@ -13,7 +13,7 @@ func GenePreviewVideo(filePath string, toPath string) error {
 		log.Errorf("GenePreviewVideo NewVideoFile err:%v", err)
 		return err
 	}
-	log.Infof("height:%v width:%v", vInfo.Height, vInfo.Width)
+	//log.Infof("height:%v width:%v", vInfo.Height, vInfo.Width)
 
 	height := vInfo.Height
 	width := vInfo.Width

@@ -186,7 +186,7 @@ func CutVideo(path string, start, end int) (string, error) {
 	//args = append(args, getResizedArgs(videoInfo)...) resize并不能减少太多体积
 	args = append(args, output)
 
-	log.Infof("Cut args:%v", args)
+	//log.Infof("Cut args:%v", args)
 
 	result, err := RunCmd(args)
 	if err != nil {

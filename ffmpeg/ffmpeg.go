@@ -23,7 +23,7 @@ func GeneScreenShot(sourcePath string, point int) (string, error) {
 }
 
 func runCommand(command string) (output []byte, err error) {
-	log.Infof("runCommand:%v", command)
+	log.Debugf("runCommand:%v", command)
 	args := strings.Split(command, " ")
 	cmd := exec.Command(args[0], args[1:]...)
 	output, err = cmd.CombinedOutput()
