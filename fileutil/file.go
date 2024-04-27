@@ -376,7 +376,10 @@ func ScanFiles(rootPath string, fn func(filePath string, fileInfo os.FileInfo) e
 		if c.IsDir() {
 			childDirs = append(childDirs, cInfo)
 		} else {
-			fn(filepath.Join(rootPath, cInfo.Name()), cInfo)
+			err := fn(filepath.Join(rootPath, cInfo.Name()), cInfo)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
