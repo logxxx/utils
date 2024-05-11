@@ -8,6 +8,23 @@ import (
 	"testing"
 )
 
+func TestGenePreviewVideoSlice(t *testing.T) {
+
+	opt := GenePreviewVideoSliceOpt{
+		FilePath:    "D:\\迅雷下载\\FC2-PPV-3280237\\1.mp4",
+		ToDir:       "",
+		SegNum:      10,
+		SegDuration: 5,
+		SkipStart:   100,
+		SkipEnd:     100,
+	}
+	resp, err := GenePreviewVideoSlice(opt)
+	if err != nil {
+		panic(err)
+	}
+	t.Logf("resp:%v", resp)
+}
+
 func TestGenePreviewVideo(t *testing.T) {
 
 	log.SetLevel(log.DebugLevel)
