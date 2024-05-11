@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -73,6 +74,15 @@ func ContainsPath(input string, slice []string) bool {
 }
 
 func Contains(input string, slice []string) bool {
+	for _, elem := range slice {
+		if elem == input {
+			return true
+		}
+	}
+	return false
+}
+
+func ContainsI64(input int64, slice []int64) bool {
 	for _, elem := range slice {
 		if elem == input {
 			return true
@@ -184,7 +194,7 @@ func ShortName(input string, reqLimit ...int) string {
 
 func EscapeFileName(input string) string {
 
-	invalids := `~-.\/:*?"<>| `
+	invalids := `！“”~-.\/:*?"<>|  `
 
 	for _, invalid := range invalids {
 		input = strings.ReplaceAll(input, string(invalid), "")
@@ -248,19 +258,27 @@ func IsSizeLargeThanMB(path string, delta int64) bool {
 	return size > delta*1024*1024
 }
 
-func Extract(content string, begin string, end string) string {
+func Extract(content string, begin string, end string) (resp string) {
 	beginIdx := strings.Index(content, begin)
 	if beginIdx < 0 {
 		return ""
 	}
+
+	if end == "" {
+		return content[beginIdx+len(begin):]
+	}
+
 	endIdx := strings.Index(content[beginIdx+len(begin):], end)
 	if endIdx < 0 {
 		return ""
 	}
-	return content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
+
+	resp = content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
+
+	return resp
 }
 
-func ExtractAll(content string, begin string, end string) []string {
+func ExtractAll(content string, begin string, end string, keepBucket bool) []string {
 
 	resp := make([]string, 0)
 
@@ -276,7 +294,12 @@ func ExtractAll(content string, begin string, end string) []string {
 		if endIdx < 0 {
 			break
 		}
-		resp = append(resp, content[beginIdx+len(begin):beginIdx+len(begin)+endIdx])
+
+		result := content[beginIdx+len(begin) : beginIdx+len(begin)+endIdx]
+		if keepBucket {
+			result = begin + result + end
+		}
+		resp = append(resp, result)
 		content = content[(beginIdx + endIdx):]
 	}
 
@@ -300,6 +323,32 @@ func GetRandomOne(req []string) string {
 
 func FormatTimeSafe(t time.Time) string {
 	return t.Format("20060102_150405")
+}
+
+func RemoveDuplicate(input []string) []string {
+	resp := make([]string, 0)
+	uniq := make(map[string]bool, 0)
+	for _, elem := range input {
+		_, ok := uniq[elem]
+		if ok {
+			continue
+		}
+		uniq[elem] = true
+		resp = append(resp, elem)
+	}
+	return resp
+}
+
+func B64(input string) string {
+	return base64.URLEncoding.EncodeToString([]byte(input))
+}
+
+func B64To(input string) string {
+	resp, err := base64.URLEncoding.DecodeString(input)
+	if err != nil {
+		return ""
+	}
+	return string(resp)
 }
 
 func IsPositiveNum(input string) bool {

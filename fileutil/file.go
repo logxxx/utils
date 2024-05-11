@@ -3,6 +3,7 @@ package fileutil
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -24,16 +25,22 @@ func IsExists(path string) bool {
 	return true
 }
 
-func WriteToFileWithRename(data []byte, dir, fileName string) (string, error) {
-	dir, fileName = getValidPath(dir, fileName)
+func WriteToFileWithRename(data []byte, filePath string) (string, error) {
+	dir := filepath.Dir(filePath)
+	fileName := filepath.Base(filePath)
+	var err error
+	dir, fileName, err = getValidPath(dir, fileName)
+	if err != nil {
+		return "", err
+	}
 	newPath := filepath.Join(dir, fileName)
 	return newPath, WriteToFile(data, newPath)
 }
 
-func getValidPath(dir, fileNameWithExt string) (string, string) {
+func getValidPath(dir, fileNameWithExt string) (string, string, error) {
 
 	if !HasFile(filepath.Join(dir, fileNameWithExt)) {
-		return dir, fileNameWithExt
+		return dir, fileNameWithExt, nil
 	}
 
 	i := 0
@@ -41,14 +48,36 @@ func getValidPath(dir, fileNameWithExt string) (string, string) {
 	fileName := strings.TrimRight(fileNameWithExt, fileExt)
 	for {
 		i++
+		if i > 1000 {
+			return "", "", errors.New("try too many times")
+		}
 		fileNameWithExt = fmt.Sprintf("%v_%v%v", fileName, i, fileExt)
 
 		if !HasFile(filepath.Join(dir, fileNameWithExt)) {
-			return dir, fileNameWithExt
+			return dir, fileNameWithExt, nil
 		}
 
 	}
 
+}
+
+func AppendToFile(filePath string, content string) error {
+
+	log.Debugf("AppendToFile path:%v content:%v", filePath, content)
+
+	os.MkdirAll(filepath.Dir(filePath), 0755)
+
+	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+	_, err = f.WriteString(content)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func WriteToFile(data []byte, filePath string) error {
@@ -325,4 +354,47 @@ func ReadByLine(filePath string, lineHandler func(string) error) error {
 	}
 
 	return nil
+}
+
+func ScanFiles(rootPath string, fn func(filePath string, fileInfo os.FileInfo) error) error {
+
+	if fn == nil {
+		return errors.New("fn empty")
+	}
+
+	childs, err := os.ReadDir(rootPath)
+	if err != nil {
+		return err
+	}
+
+	childDirs := []os.FileInfo{}
+	for _, c := range childs {
+		cInfo, err := c.Info()
+		if err != nil {
+			continue
+		}
+		if c.IsDir() {
+			childDirs = append(childDirs, cInfo)
+		} else {
+			fn(filepath.Join(rootPath, cInfo.Name()), cInfo)
+		}
+	}
+
+	for _, c := range childDirs {
+		ScanFiles(filepath.Join(rootPath, c.Name()), fn)
+	}
+
+	return nil
+}
+
+func RemoveFileToDir(filePath string, dirPath string) error {
+	fStat, err := os.Stat(filePath)
+	if err != nil {
+		return err
+	}
+	err = CopyFile(filePath, filepath.Join(dirPath, filepath.Base(filePath)), fStat.Mode())
+	if err != nil {
+		return err
+	}
+	return os.Remove(filePath)
 }
