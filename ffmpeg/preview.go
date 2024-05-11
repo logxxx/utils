@@ -34,11 +34,16 @@ func GenePreviewVideoSlice(opt GenePreviewVideoSliceOpt) (resp string, err error
 	log.Debugf("cutPoints:%v", cutPoints)
 
 	chunks := make([]string, 0)
-	for _, point := range cutPoints {
-		log.Printf("")
+
+	defer func() {
+		os.Remove(filepath.Join(filepath.Dir(opt.FilePath), "_ffmpegpreview"))
+	}()
+
+	for i, point := range cutPoints {
+		log.Debugf("genePreviewVideoChunk %v/%v %v~%v", i+1, len(cutPoints), point, point+opt.SegDuration)
 		chunk, err := genePreviewVideoChunk(opt.FilePath, point, point+opt.SegDuration)
 		if err != nil {
-			log.Printf("GenePreviewVideo genePreviewVideoChunk err:%v", err)
+			log.Errorf("GenePreviewVideo genePreviewVideoChunk err:%v", err)
 			return "", err
 		}
 		chunks = append(chunks, chunk)
@@ -81,10 +86,27 @@ func mergeChunks(sourcePath string, chunks []string, toDir string) (string, erro
 }
 
 func getCutPoints(videoDuration int, segmentNum int, segmentDuration int, skipStart, skipEnd int) []int {
+
+	if segmentDuration <= 0 {
+		segmentDuration = 5
+	}
+
+	if segmentNum <= 0 {
+		segmentNum = 3
+	}
+
 	points := make([]int, 0)
 	allPointNum := (videoDuration - skipStart - skipEnd) / (segmentDuration)
 	step := allPointNum / segmentNum
-	log.Printf("getCutPoints allPointNum:%v step:%v", allPointNum, step)
+	log.Debugf("getCutPoints allPointNum:%v step:%v", allPointNum, step)
+	if allPointNum <= 0 {
+		segmentNum = 3
+		segmentDuration = 5
+		skipStart = 0
+		skipEnd = 0
+		allPointNum = (videoDuration - skipStart - skipEnd) / (segmentDuration)
+		step = allPointNum / segmentNum
+	}
 	for i := 1; i <= segmentNum; i++ {
 		points = append(points, skipStart+i*step*segmentDuration)
 	}
@@ -95,7 +117,7 @@ func genePreviewVideoChunk(sourcePath string, fromSec, toSec int) (string, error
 	sourceDir := filepath.Dir(sourcePath)
 	command := "ffmpeg -y -ss %v -to %v -i %v -vf scale=640:-2 -pix_fmt yuv420p -profile:v high -level 4.2 -crf 21 -threads 4 -strict -2 %v"
 	pureName, ext := getPureNameAndExt(sourcePath)
-	outputFilePath := filepath.Join(sourceDir, "_preview", fmt.Sprintf("ffmpeg_%v_%v~%vs%v", pureName, fromSec, toSec, ext))
+	outputFilePath := filepath.Join(sourceDir, "_ffmpegpreview", fmt.Sprintf("ffmpegtrunk_%v_%v~%vs%v", pureName, fromSec, toSec, ext))
 	os.MkdirAll(filepath.Dir(outputFilePath), 0755)
 	command = fmt.Sprintf(command, fromSec, toSec, sourcePath, outputFilePath)
 	_, err := runCommand(command)
