@@ -12,7 +12,7 @@ import (
 
 type GenePreviewVideoSliceOpt struct {
 	FilePath    string
-	ToDir       string
+	ToPath      string
 	SegNum      int
 	SegDuration int
 	SkipStart   int
@@ -50,7 +50,7 @@ func GenePreviewVideoSlice(opt GenePreviewVideoSliceOpt) (resp string, err error
 	}
 	log.Printf("chunks:%v", chunks)
 
-	mergedPath, err := mergeChunks(opt.FilePath, chunks, opt.ToDir)
+	mergedPath, err := mergeChunks(opt.FilePath, chunks, opt.ToPath)
 	if err != nil {
 		log.Printf("GenePreviewVideo mergeChunks err:%v", err)
 		return "", err
@@ -59,7 +59,7 @@ func GenePreviewVideoSlice(opt GenePreviewVideoSliceOpt) (resp string, err error
 
 }
 
-func mergeChunks(sourcePath string, chunks []string, toDir string) (string, error) {
+func mergeChunks(sourcePath string, chunks []string, toPath string) (string, error) {
 	contactFile := filepath.Join(filepath.Dir(sourcePath), "_preview", fmt.Sprintf("ffmpeg_concat_%v.txt", time.Now().UnixNano()))
 	os.MkdirAll(filepath.Dir(contactFile), 0755)
 	content := ""
@@ -72,17 +72,18 @@ func mergeChunks(sourcePath string, chunks []string, toDir string) (string, erro
 		return "", err
 	}
 	pureName, _ := getPureNameAndExt(sourcePath)
-	if toDir == "" {
-		toDir = filepath.Dir(sourcePath)
+	if toPath == "" {
+		toPath = filepath.Join(toPath, fmt.Sprintf("%v_preview.mp4", pureName))
 	}
-	mergedPath := filepath.Join(toDir, fmt.Sprintf("%v_preview.mp4", pureName))
-	command := fmt.Sprintf("ffmpeg -y -f concat -safe 0 -i %v %v", contactFile, mergedPath)
+	os.MkdirAll(filepath.Dir(toPath), 0755)
+
+	command := fmt.Sprintf("ffmpeg -y -f concat -safe 0 -i %v %v", contactFile, toPath)
 	_, err = runCommand(command)
 	if err != nil {
 		log.Errorf("mergeChunks runCommand err:%v command:%v", err, command)
 		return "", err
 	}
-	return mergedPath, nil
+	return toPath, nil
 }
 
 func getCutPoints(videoDuration int, segmentNum int, segmentDuration int, skipStart, skipEnd int) []int {

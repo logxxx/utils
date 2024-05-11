@@ -12,7 +12,7 @@ func TestGenePreviewVideoSlice(t *testing.T) {
 
 	opt := GenePreviewVideoSliceOpt{
 		FilePath:    "D:\\迅雷下载\\FC2-PPV-3280237\\1.mp4",
-		ToDir:       "",
+		ToPath:      "",
 		SegNum:      10,
 		SegDuration: 5,
 		SkipStart:   100,
