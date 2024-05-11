@@ -376,25 +376,39 @@ func ScanFiles(rootPath string, fn func(filePath string, fileInfo os.FileInfo) e
 		if c.IsDir() {
 			childDirs = append(childDirs, cInfo)
 		} else {
-			fn(filepath.Join(rootPath, cInfo.Name()), cInfo)
+			err := fn(filepath.Join(rootPath, cInfo.Name()), cInfo)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	for _, c := range childDirs {
-		ScanFiles(filepath.Join(rootPath, c.Name()), fn)
+		err := ScanFiles(filepath.Join(rootPath, c.Name()), fn)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func RemoveFileToDir(filePath string, dirPath string) error {
+func MoveFileToDir(filePath string, dirPath string) error {
 	fStat, err := os.Stat(filePath)
 	if err != nil {
 		return err
 	}
-	err = CopyFile(filePath, filepath.Join(dirPath, filepath.Base(filePath)), fStat.Mode())
+
+	err = CopyFile(filePath, GetUniqFilePath(filepath.Join(dirPath, fStat.Name())), fStat.Mode())
 	if err != nil {
 		return err
 	}
 	return os.Remove(filePath)
+}
+
+func GetPureNameAndExt(sourcePath string) (string, string) {
+	baseName := filepath.Base(sourcePath)
+	ext := filepath.Ext(baseName)
+	pureName := strings.TrimSuffix(baseName, ext)
+	return pureName, ext
 }

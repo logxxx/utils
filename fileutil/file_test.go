@@ -6,10 +6,36 @@ import (
 	log "github.com/sirupsen/logrus"
 	rand2 "math/rand"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 )
+
+func TestGetUniqName(t *testing.T) {
+	tmpDir := os.TempDir()
+	now := time.Now().Unix()
+	filePath := filepath.Join(tmpDir, fmt.Sprintf("test_%v.txt", now))
+	err := WriteToFile([]byte("hello world"), filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := GetUniqFilePath(filePath)
+	if resp != filepath.Join(tmpDir, fmt.Sprintf("test_%v(1).txt", now)) {
+		t.Fatal(resp, filePath)
+	}
+
+	err = WriteToFile([]byte("hello world"), resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp = GetUniqFilePath(filePath)
+	if resp != filepath.Join(tmpDir, fmt.Sprintf("test_%v(2).txt", now)) {
+		t.Fatal(resp, filePath)
+	}
+
+}
 
 func TestWriteToFileWithRename(t *testing.T) {
 	for i := 0; i < 10; i++ {
