@@ -48,6 +48,13 @@ func TestWriteToFileWithRename(t *testing.T) {
 
 }
 
+func TestScanFiles(t *testing.T) {
+	err := ScanFiles("H:/hehe", func(filePath string, fileInfo os.FileInfo) error {
+		return nil
+	})
+	t.Logf("err:%v", err)
+}
+
 func TestFindFile(t *testing.T) {
 	result, err := FindFile("N:\\source", func(filepath string) bool {
 		if strings.Contains(filepath, "微信录屏") {
