@@ -33,15 +33,52 @@ func GenePreviewVideoSlice(opt GenePreviewVideoSliceOpt) (resp string, err error
 	cutPoints := getCutPoints(int(video.Duration), opt.SegNum, opt.SegDuration, opt.SkipStart, opt.SkipEnd)
 	log.Debugf("cutPoints:%v", cutPoints)
 
+	height := video.Height
+	width := video.Width
+
+	min := 640
+	if video.Height > video.Width { //竖屏
+
+		for {
+			if height <= min {
+				break
+			}
+			height /= 2
+			width /= 2
+		}
+
+	} else {
+		for {
+			if width <= min {
+				break
+			}
+			height /= 2
+			width /= 2
+		}
+	}
+
+	if width%2 != 0 {
+		width -= 1
+	}
+
+	if height%2 != 0 {
+		height -= 1
+	}
+
+	scale := fmt.Sprintf("%v:%v", width, height)
+
 	chunks := make([]string, 0)
 
 	defer func() {
+		time.Sleep(3 * time.Second)
 		os.Remove(filepath.Join(filepath.Dir(opt.FilePath), "_ffmpegpreview"))
+		os.Remove(filepath.Join(filepath.Dir(opt.FilePath), "_preview"))
+
 	}()
 
 	for i, point := range cutPoints {
 		log.Debugf("genePreviewVideoChunk %v/%v %v~%v", i+1, len(cutPoints), point, point+opt.SegDuration)
-		chunk, err := genePreviewVideoChunk(opt.FilePath, point, point+opt.SegDuration)
+		chunk, err := genePreviewVideoChunk(opt.FilePath, point, point+opt.SegDuration, scale)
 		if err != nil {
 			log.Errorf("GenePreviewVideo genePreviewVideoChunk err:%v", err)
 			return "", err
@@ -114,13 +151,13 @@ func getCutPoints(videoDuration int, segmentNum int, segmentDuration int, skipSt
 	return points
 }
 
-func genePreviewVideoChunk(sourcePath string, fromSec, toSec int) (string, error) {
+func genePreviewVideoChunk(sourcePath string, fromSec, toSec int, scale string) (string, error) {
 	sourceDir := filepath.Dir(sourcePath)
-	command := "ffmpeg -y -ss %v -to %v -i %v -vf scale=640:-2 -pix_fmt yuv420p -profile:v high -level 4.2 -crf 21 -threads 4 -strict -2 %v"
+	command := "ffmpeg -y -ss %v -to %v -i %v -vf scale=%v -pix_fmt yuv420p -profile:v high -level 4.2 -crf 21 -threads 4 -strict -2 %v"
 	pureName, ext := getPureNameAndExt(sourcePath)
 	outputFilePath := filepath.Join(sourceDir, "_ffmpegpreview", fmt.Sprintf("ffmpegtrunk_%v_%v~%vs%v", pureName, fromSec, toSec, ext))
 	os.MkdirAll(filepath.Dir(outputFilePath), 0755)
-	command = fmt.Sprintf(command, fromSec, toSec, sourcePath, outputFilePath)
+	command = fmt.Sprintf(command, fromSec, toSec, sourcePath, scale, outputFilePath)
 	_, err := runCommand(command)
 	if err != nil {
 		return "", err
