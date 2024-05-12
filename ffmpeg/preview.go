@@ -70,10 +70,8 @@ func GenePreviewVideoSlice(opt GenePreviewVideoSliceOpt) (resp string, err error
 	chunks := make([]string, 0)
 
 	defer func() {
-		time.Sleep(3 * time.Second)
-		os.Remove(filepath.Join(filepath.Dir(opt.FilePath), "_ffmpegpreview"))
-		os.Remove(filepath.Join(filepath.Dir(opt.FilePath), "_preview"))
-
+		os.RemoveAll(filepath.Join(filepath.Dir(opt.FilePath), "_ffmpegpreview"))
+		os.RemoveAll(filepath.Join(filepath.Dir(opt.FilePath), "_preview"))
 	}()
 
 	for i, point := range cutPoints {
