@@ -403,13 +403,17 @@ func ScanFiles(rootPath string, isReverse bool, fn func(filePath string, fileInf
 	return nil
 }
 
-func MoveFileToDir(filePath string, dirPath string) error {
+func MoveFileToDir(filePath string, dirPath string, mod os.FileMode) error {
 	fStat, err := os.Stat(filePath)
 	if err != nil {
 		return err
 	}
 
-	err = CopyFile(filePath, GetUniqFilePath(filepath.Join(dirPath, fStat.Name())), fStat.Mode())
+	if mod.String() == "" {
+		mod = fStat.Mode()
+	}
+
+	err = CopyFile(filePath, GetUniqFilePath(filepath.Join(dirPath, fStat.Name())), mod)
 	if err != nil {
 		return err
 	}
