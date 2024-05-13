@@ -356,7 +356,7 @@ func ReadByLine(filePath string, lineHandler func(string) error) error {
 	return nil
 }
 
-func ScanFiles(rootPath string, fn func(filePath string, fileInfo os.FileInfo) error) error {
+func ScanFiles(rootPath string, isReverse bool, fn func(filePath string, fileInfo os.FileInfo) error) error {
 
 	if fn == nil {
 		return errors.New("fn empty")
@@ -366,6 +366,14 @@ func ScanFiles(rootPath string, fn func(filePath string, fileInfo os.FileInfo) e
 	if err != nil {
 		log.Infof("ScanFiles os.ReadDir err:%v rootPath:%v", err, rootPath)
 		return nil
+	}
+
+	if isReverse {
+		sorted := []os.DirEntry{}
+		for i := len(childs) - 1; i >= 0; i-- {
+			sorted = append(sorted, childs[i])
+		}
+		childs = sorted
 	}
 
 	childDirs := []os.FileInfo{}
@@ -385,7 +393,7 @@ func ScanFiles(rootPath string, fn func(filePath string, fileInfo os.FileInfo) e
 	}
 
 	for _, c := range childDirs {
-		err := ScanFiles(filepath.Join(rootPath, c.Name()), fn)
+		err := ScanFiles(filepath.Join(rootPath, c.Name()), isReverse, fn)
 		if err != nil {
 			log.Infof("ScanFiles err:%v path:%v", err, filepath.Join(rootPath, c.Name()))
 			return err
