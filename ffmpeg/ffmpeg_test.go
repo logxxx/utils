@@ -10,15 +10,16 @@ import (
 
 func TestGenePreviewVideoSlice(t *testing.T) {
 
-	opt := GenePreviewVideoSliceOpt{
-		FilePath:    "D:\\迅雷下载\\FC2-PPV-3280237\\1.mp4",
-		ToPath:      "",
-		SegNum:      10,
-		SegDuration: 5,
-		SkipStart:   100,
-		SkipEnd:     100,
-	}
-	resp, err := GenePreviewVideoSlice(opt)
+	resp, err := GenePreviewVideoSlice("D:\\迅雷下载\\FC2-PPV-3280237\\1.mp4", func(vInfo *VideoFile) GenePreviewVideoSliceOpt {
+		opt := GenePreviewVideoSliceOpt{
+			ToPath:      "",
+			SegNum:      10,
+			SegDuration: 5,
+			SkipStart:   100,
+			SkipEnd:     100,
+		}
+		return opt
+	})
 	if err != nil {
 		panic(err)
 	}

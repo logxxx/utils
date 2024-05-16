@@ -2,16 +2,16 @@ package ffmpeg
 
 import (
 	"fmt"
+	"github.com/logxxx/utils"
+	"github.com/logxxx/utils/runutil"
 	log "github.com/sirupsen/logrus"
 
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 type GenePreviewVideoSliceOpt struct {
-	FilePath    string
 	ToPath      string
 	SegNum      int
 	SegDuration int
@@ -19,48 +19,92 @@ type GenePreviewVideoSliceOpt struct {
 	SkipEnd     int
 }
 
-func GenePreviewVideoSlice(opt GenePreviewVideoSliceOpt) (resp string, err error) {
+func GenePreviewVideoSlice(filePath string, fn func(vInfo *VideoFile) GenePreviewVideoSliceOpt) (resp string, err error) {
+
+	logger := log.WithField("func_name", "GenePreviewVideoSlice").WithField("filePath", filePath)
 
 	ffprobe := FFProbe("ffprobe")
-	video, err := ffprobe.NewVideoFile(opt.FilePath)
+	video, err := ffprobe.NewVideoFile(filePath)
 	if err != nil {
-		log.Errorf("GenePreviewVideoSlice NewVideoFile err:%v", err)
+		logger.Errorf("GenePreviewVideoSlice NewVideoFile err:%v", err)
 		return
 	}
 
-	log.Debugf("all duration:%v", video.Duration)
+	logger.Debugf("all duration:%v", video.Duration)
+
+	opt := fn(video)
 
 	cutPoints := getCutPoints(int(video.Duration), opt.SegNum, opt.SegDuration, opt.SkipStart, opt.SkipEnd)
-	log.Debugf("cutPoints:%v", cutPoints)
+	logger.Debugf("cutPoints:%v", cutPoints)
 
 	chunks := make([]string, 0)
 
+	previewDir := filepath.Join(filepath.Dir(filePath), fmt.Sprintf("_ffmpegpreview_%v", utils.MD5(filePath)))
+
 	defer func() {
-		os.Remove(filepath.Join(filepath.Dir(opt.FilePath), "_ffmpegpreview"))
+		runutil.RunSafe(func() error {
+
+			logger.Debugf("remove preview dir:%v", previewDir)
+			err := os.RemoveAll(previewDir)
+			if err != nil {
+				logger.Debugf("os.Remove err:%v path:%v", err, previewDir)
+			} else {
+				logger.Debugf("remove preview dir succ")
+			}
+			return nil
+		})
+
 	}()
 
+	w, h := getPreviewWH(video)
+
 	for i, point := range cutPoints {
-		log.Debugf("genePreviewVideoChunk %v/%v %v~%v", i+1, len(cutPoints), point, point+opt.SegDuration)
-		chunk, err := genePreviewVideoChunk(opt.FilePath, point, point+opt.SegDuration)
+		logger.Debugf("genePreviewVideoChunk %v/%v %v~%v", i+1, len(cutPoints), point, point+opt.SegDuration)
+		chunk, err := genePreviewVideoChunk(filePath, previewDir, point, point+opt.SegDuration, w, h)
 		if err != nil {
-			log.Errorf("GenePreviewVideo genePreviewVideoChunk err:%v", err)
+			logger.Errorf("GenePreviewVideo genePreviewVideoChunk err:%v", err)
 			return "", err
 		}
 		chunks = append(chunks, chunk)
 	}
-	log.Printf("chunks:%v", chunks)
+	logger.Debugf("chunks:%v", chunks)
 
-	mergedPath, err := mergeChunks(opt.FilePath, chunks, opt.ToPath)
+	mergedPath, err := mergeChunks(filePath, previewDir, chunks, opt.ToPath)
 	if err != nil {
-		log.Printf("GenePreviewVideo mergeChunks err:%v", err)
+		logger.Errorf("GenePreviewVideo mergeChunks err:%v", err)
 		return "", err
 	}
 	return mergedPath, nil
 
 }
 
-func mergeChunks(sourcePath string, chunks []string, toPath string) (string, error) {
-	contactFile := filepath.Join(filepath.Dir(sourcePath), "_preview", fmt.Sprintf("ffmpeg_concat_%v.txt", time.Now().UnixNano()))
+func getPreviewWH(v *VideoFile) (w int, h int) {
+	min := 480
+	w = v.Width
+	h = v.Height
+	if w > h { //宽
+		for {
+			if w <= min {
+				return
+			}
+			w /= 2
+			h /= 2
+		}
+	}
+	if w < h { //长视频
+		for {
+			if h <= min {
+				return
+			}
+			w /= 2
+			h /= 2
+		}
+	}
+	return
+}
+
+func mergeChunks(sourcePath string, previewDir string, chunks []string, toPath string) (string, error) {
+	contactFile := filepath.Join(previewDir, fmt.Sprintf("ffmpeg_concat.txt"))
 	os.MkdirAll(filepath.Dir(contactFile), 0755)
 	content := ""
 	for _, chunk := range chunks {
@@ -96,31 +140,57 @@ func getCutPoints(videoDuration int, segmentNum int, segmentDuration int, skipSt
 		segmentNum = 3
 	}
 
+	for segmentDuration*segmentNum > videoDuration {
+		if segmentDuration > 3 {
+			segmentDuration--
+		} else {
+			break
+		}
+	}
+
+	for segmentDuration*segmentNum > videoDuration {
+		if segmentNum > 1 {
+			segmentNum--
+		} else {
+			break
+		}
+	}
+
+	for skipStart+skipEnd+segmentNum*segmentDuration > videoDuration {
+		if skipEnd > 0 {
+			skipEnd--
+		} else {
+			break
+		}
+	}
+
+	for skipStart+skipEnd+segmentNum*segmentDuration > videoDuration {
+		if skipStart > 0 {
+			skipStart--
+		} else {
+			break
+		}
+	}
+
+	log.Debugf("getCutPoints videoDuration:%v segNum:%v segDur:%v skipStart:%v skipEnd:%v", videoDuration, segmentNum, segmentDuration, skipStart, skipEnd)
+
 	points := make([]int, 0)
 	allPointNum := (videoDuration - skipStart - skipEnd) / (segmentDuration)
 	step := allPointNum / segmentNum
 	log.Debugf("getCutPoints allPointNum:%v step:%v", allPointNum, step)
-	if allPointNum <= 0 {
-		segmentNum = 3
-		segmentDuration = 5
-		skipStart = 0
-		skipEnd = 0
-		allPointNum = (videoDuration - skipStart - skipEnd) / (segmentDuration)
-		step = allPointNum / segmentNum
-	}
 	for i := 1; i <= segmentNum; i++ {
 		points = append(points, skipStart+i*step*segmentDuration)
 	}
 	return points
 }
 
-func genePreviewVideoChunk(sourcePath string, fromSec, toSec int) (string, error) {
-	sourceDir := filepath.Dir(sourcePath)
-	command := "ffmpeg -y -ss %v -to %v -i %v -vf scale=640:-2 -pix_fmt yuv420p -profile:v high -level 4.2 -crf 21 -threads 4 -strict -2 %v"
+func genePreviewVideoChunk(sourcePath, previewDir string, fromSec, toSec int, w, h int) (string, error) {
+
+	command := "ffmpeg -y -ss %v -to %v -i %v -vf scale=%v:%v -pix_fmt yuv420p -profile:v high -level 4.2 -crf 21 -threads 4 -strict -2 %v"
 	pureName, ext := getPureNameAndExt(sourcePath)
-	outputFilePath := filepath.Join(sourceDir, "_ffmpegpreview", fmt.Sprintf("ffmpegtrunk_%v_%v~%vs%v", pureName, fromSec, toSec, ext))
+	outputFilePath := filepath.Join(previewDir, fmt.Sprintf("ffmpegtrunk_%v_%v~%vs%v", pureName, fromSec, toSec, ext))
 	os.MkdirAll(filepath.Dir(outputFilePath), 0755)
-	command = fmt.Sprintf(command, fromSec, toSec, sourcePath, outputFilePath)
+	command = fmt.Sprintf(command, fromSec, toSec, sourcePath, w, h, outputFilePath)
 	_, err := runCommand(command)
 	if err != nil {
 		return "", err
