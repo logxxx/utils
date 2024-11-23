@@ -315,9 +315,6 @@ func ReadByLine(filePath string, lineHandler func(string) error) error {
 			log.Errorf("ReadByLine ReadLine err:%vv", err)
 			return err
 		}
-		if len(line) == 0 {
-			continue
-		}
 
 		if err := lineHandler(string(line)); err != nil {
 			return err

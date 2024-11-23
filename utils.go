@@ -95,7 +95,15 @@ func HasFile(path string) bool {
 	return true
 }
 
-func GetFileSize(path string) (showSize string) {
+func GetFileSize(path string) (size int64) {
+	fInfo, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	return fInfo.Size()
+}
+
+func GetShowFileSize(path string) (showSize string) {
 	fInfo, err := os.Stat(path)
 	if err != nil {
 		return "0kb"
