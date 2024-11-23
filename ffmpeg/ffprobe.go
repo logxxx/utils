@@ -135,7 +135,7 @@ type FFProbeStream struct {
 // NewVideoFile runs ffprobe on the given path and returns a VideoFile.
 func (f *FFProbe) NewVideoFile(videoPath string) (*VideoFile, error) {
 	args := []string{"-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", "-show_error", videoPath}
-	log.Printf("args:%v", args)
+	//log.Printf("args:%v", args)
 	cmd := exec.Command(string(*f), args...)
 	out, err := cmd.Output()
 

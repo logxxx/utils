@@ -2,10 +2,14 @@ package netutil
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -83,4 +87,50 @@ func SetHttpProxy(proxyURL string) (httpclient *http.Client) {
 		},
 	}
 	return httpclient
+}
+
+func DownloadToFile(url string, downloadPath string, httpClient ...*http.Client) error {
+	c := http.DefaultClient
+	if len(httpClient) > 0 {
+		c = httpClient[0]
+	}
+	resp, err := c.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("invalid code:%v", resp.StatusCode)
+	}
+
+	os.MkdirAll(filepath.Dir(downloadPath), 0755)
+
+	os.Remove(downloadPath)
+
+	f, err := os.Create(downloadPath)
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(f, resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ApplyFreePort() (int, error) {
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		return 0, err
+	}
+
+	port := listener.Addr().(*net.TCPAddr).Port
+	err = listener.Close()
+	if err != nil {
+		return 0, err
+	}
+
+	return port, nil
 }

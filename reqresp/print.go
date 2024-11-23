@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/logxxx/utils/log"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"time"
 )

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"github.com/logxxx/utils"
 	"github.com/logxxx/utils/fileutil"
-	"github.com/logxxx/utils/log"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"sync"
